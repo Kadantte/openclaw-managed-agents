@@ -18,11 +18,13 @@ Usage::
 from __future__ import annotations
 
 import httpx
+from typing import Optional
 
 from .resources.agents import Agents
 from .resources.environments import Environments
 from .resources.sessions import Sessions
-from .types import Agent, Environment, Event, Session
+from .resources.vaults import Vaults
+from .types import Agent, Environment, Event, Session, Vault, VaultCredential
 
 __all__ = [
     "OpenClawClient",
@@ -30,6 +32,8 @@ __all__ = [
     "Environment",
     "Session",
     "Event",
+    "Vault",
+    "VaultCredential",
 ]
 
 
@@ -49,8 +53,9 @@ class OpenClawClient:
     def __init__(
         self,
         base_url: str = "http://localhost:8080",
-        api_token: str | None = None,
+        api_token: Optional[str] = None,
         timeout: float = 600.0,
+        transport: Optional[httpx.BaseTransport] = None,
     ) -> None:
         headers: dict[str, str] = {}
         if api_token:
@@ -63,10 +68,12 @@ class OpenClawClient:
             timeout=timeout,
             trust_env=False,
             headers=headers,
+            transport=transport,
         )
         self.agents = Agents(self._client)
         self.environments = Environments(self._client)
         self.sessions = Sessions(self._client)
+        self.vaults = Vaults(self._client)
 
     def close(self) -> None:
         """Close the underlying HTTP connection pool."""

@@ -244,7 +244,7 @@ ZENMUX_JSON=$(zenmux_json_fragment)
 
 # Assemble the base config with jq (no string-escaping footguns). The
 # models.providers.<plugin-id> block that Category B providers need (moonshot,
-# deepseek, qwen, etc.) is populated by apply-provider-config.mjs after this
+# deepseek, cerebras, qwen, etc.) is populated by apply-provider-config.mjs after this
 # block writes, using the bundled openclaw extension's catalog builder as the
 # source of truth. This eliminates the previous hand-mirror that hardcoded
 # moonshot's model catalog + zero prices and made the runtime drift from
@@ -305,16 +305,19 @@ jq -n \
           id: $agent_id,
           model: { primary: $model }
         }
-        + (if $thinking_level != "" and $thinking_level != "off" then { thinkingLevel: $thinking_level } else {} end)
+        + (if $thinking_level != "" then { thinkingDefault: $thinking_level } else {} end)
         + (if ($tools.alsoAllow // null) then { tools: $tools } else {} end)
         + (if ($denied | length) > 0 then { tools: ((.tools // {}) + { deny: $denied }) } else {} end)
         + (if $instructions != "" then { systemPromptOverride: $instructions } else {} end)
       )
     ],
-    defaults: {
-      model: { primary: $model },
-      models: ({ ($model): {} })
-    }
+    defaults: (
+      {
+        model: { primary: $model },
+        models: ({ ($model): {} })
+      }
+      + (if $thinking_level != "" then { thinkingDefault: $thinking_level } else {} end)
+    )
   },
   plugins: {
     entries: (
